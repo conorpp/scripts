@@ -1,0 +1,17 @@
+#!/bin/bash
+# Screen lock script
+# used by putting:
+#   bindsym $mod+l exec "~/.local/bin/fuzzy_lock.sh"
+#   exec xautolock -time 15 -locker '~/.local/bin/fuzzy_lock.sh' &
+#
+# in .i3/config
+
+# take a screen shot
+scrot /tmp/lock.png
+
+# blur it
+mogrify -scale 32% -scale 312.5% /tmp/lock.png
+
+# lock screen with picture
+i3lock -i /tmp/lock.png
+
