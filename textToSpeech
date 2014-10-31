@@ -1,0 +1,22 @@
+#!/bin/bash
+
+
+lan="en"
+
+if [[ "$1" = "help" || "$1" = "-h" ]]; then
+    echo "Text to speech.  Supply a language code to play in different language."
+    echo "  E.g. ./textToSpeech ru # play in russian"
+    exit 0
+elif [[ -n "$1" ]]; then
+    lan=$1
+fi
+
+while read word; 
+do 
+    urlword=$(echo $word | tr ' ' '+')
+    url="http://translate.google.com/translate_a/t?client=t&text=$urlword&hl=en&sl=en&tl=$lan&ie=UTF-8&oe=UTF-8&multires=1&prev=btn&ssel=0&tsel=0&sc=1"
+    text=$(curl -A "Mozilla/5.0" $url --silent| sed 's/\[\[\["\([^"]*\).*/\1/')
+    echo "$word -> $text"
+    wget -q -U Mozilla -O output.mp3 "http://translate.google.com/translate_tts?ie=UTF-8&tl=$lan&q=$text" 
+    mplayer output.mp3 &> /dev/null
+done 
