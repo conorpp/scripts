@@ -1,22 +1,71 @@
 #!/bin/bash
 
+# Uses Google Translate and Text to Speach
+# to play what you type in, in any language
+#
+# Need a program to play .mp3 files.  This uses mplayer.
+AUDIO_PROGRAM=mplayer
 
 lan="en"
+slan="en"
 
-if [[ "$1" = "help" || "$1" = "-h" ]]; then
-    echo "Text to speech.  Supply a language code to play in different language."
-    echo "  E.g. ./textToSpeech ru # play in russian"
-    exit 0
-elif [[ -n "$1" ]]; then
-    lan=$1
-fi
+function help
+{
+    echo "Text to speech.  Supply a language ISO 139-1 code to play in different language."
+    echo "E.g. ./textToSpeech -l ru     # play in Russian (from English default)"
+    echo "     ./textToSpeech -l ru -s fr     # play in Russian, translate from French"
+    echo "     ./textToSpeech -l en -s es     # play in English, translate from Espanol"
+    echo "Example ISO 139-1 codes: 
+        Macedonian: mk
+        Irish: ga
+        German: de
+        Arabic: ar
+        Chinese: zh
+        Korean: ko"
+}
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    shift
+    case $key in
+        -h|--help|help)
+            help
+            exit 0
+        ;;
+        -l|--language)
+            lan="$1"
+            shift
+        ;;
+        -s|--source)
+            slan="$1"
+            shift
+        ;;
+        *)
+            echo "Unknown arg " $key
+            exit 1
+        ;;
+    esac
+done
 
 while read word; 
 do 
+    # get url ready
     urlword=$(echo $word | tr ' ' '+')
-    url="http://translate.google.com/translate_a/t?client=t&text=$urlword&hl=en&sl=en&tl=$lan&ie=UTF-8&oe=UTF-8&multires=1&prev=btn&ssel=0&tsel=0&sc=1"
-    text=$(curl -A "Mozilla/5.0" $url --silent| sed 's/\[\[\["\([^"]*\).*/\1/')
-    echo "$word -> $text"
+    url="http://translate.google.com/translate_a/t?client=t&text="
+    url+="$urlword&hl=en&sl=$slan&tl=$lan&ie=UTF-8&oe=UTF-8&multires=1&prev=btn&ssel=0&tsel=0&sc=1"
+
+    # translate text from slan to lan if needed
+    if [[ "$slan" != "$lan"  ]]; then
+        text=$(curl -A "Mozilla/5.0" $url --silent| sed 's/\[\[\["\([^"]*\).*/\1/')
+        echo "$word -> $text"
+    else
+        text=$word
+    fi
+    
+    # download mp3
     wget -q -U Mozilla -O output.mp3 "http://translate.google.com/translate_tts?ie=UTF-8&tl=$lan&q=$text" 
-    mplayer output.mp3 &> /dev/null
+
+    # play mp3
+    $AUDIO_PROGRAM output.mp3 &> /dev/null
 done 
