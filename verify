@@ -1,0 +1,44 @@
+#!/bin/sh
+
+z=$(basename "$0")
+
+err() {
+	printf "%s: %s\n" "$z" "$1" >&2
+	exit 1
+}
+
+usage() {
+	printf "Usage: %s file hash [algo]\n" "$z"
+	exit 2
+}
+
+[ $# -eq 2 -o $# -eq 3 ] || usage
+
+file=$1
+hash=$2
+
+if [ $# -eq 3 ]; then
+	algo="$3"
+else
+	# Guess hash algorithm by length.
+	len=$(printf %s "$2" | wc -c | awk '{print $1}')
+	case "$len" in
+	128) algo=sha512 ;;
+	64) algo=sha256 ;;
+	40) algo=sha1 ;;
+	32) algo=md5 ;;
+	*) err "unknown hash type (length $len)" ;;
+	esac
+fi
+
+actual=$(openssl dgst -r -"$algo" < "$file" | cut -d' ' -f1)
+
+if [ X"$actual" = X"$hash" ]; then
+	echo "$algo OK"
+	exit 0
+else
+	echo "$algo FAIL"
+	printf "\twanted: %s\n" "$hash"
+	printf "\tactual: %s\n" "$actual"
+	exit 1
+fi
