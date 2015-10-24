@@ -28,7 +28,7 @@ if $verbose:
     for i,val in d.iteritems():
         print(i+':',val)
 else:
-    print(d['city'], d['country'], "(%s, %s)" % (d['latitude'],d['longitude']))
+    print(d['city'] if 'city' in d else '', d['country'], "(%s, %s)" % (d['latitude'],d['longitude']))
 EOF
 
 
